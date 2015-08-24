@@ -55,8 +55,6 @@ CPPFLAGS+="$LOCAL_CFLAGS"
 CFLAGS+="$LOCAL_CFLAGS"
 OBJCFLAGS+="$LOCAL_CFLAGS"
 
-AR_DEPENDS([ssl], [Y], [openssl/ssl.h], [N])
-AR_DEPENDS([crypto], [Y], [openssl/crypto.h], [N])
 
 ##########################################################################
 # Check headers
@@ -67,7 +65,6 @@ AC_CHECK_DECLS([SYS_gettid],[],[],[[#include <sys/syscall.h>]])
 
 AC_CHECK_HEADERS([android/log.h], LIBS+=" -llog",)
 
-AC_CHECK_HEADERS([sys/uio.h], , AC_MSG_ERROR(The sys/uio.h header is required to build the library!))
 
 # Checks for pthread.h
 AC_CHECK_HEADERS([pthread.h], [
@@ -91,8 +88,6 @@ AC_CHECK_FUNCS([gettimeofday], , AC_MSG_WARN(Your platform does not support gett
 AC_CHECK_FUNCS([clock_gettime], , AC_MSG_WARN(Your platform does not support clock_gettime))
 AC_CHECK_DECLS([CLOCK_MONOTONIC, CLOCK_REALTIME], , AC_MSG_WARN(Your platform does not support clock_gettime monotonic or realtime clock), [[#include <time.h>]])
 
-# Checks for socket.h
-AC_CHECK_HEADERS([sys/socket.h netinet/in.h], , AC_MSG_ERROR(The socket header is required in order to build the library!))
 
 # Checks for mach/mach_time.h
 # TO CHECK

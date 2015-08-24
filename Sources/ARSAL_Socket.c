@@ -34,12 +34,20 @@
  * @date 06/06/2012
  * @author frederic.dhaeyer@parrot.com
  */
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <config.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <libARSAL/ARSAL_Socket.h>
 #include <errno.h>
 
+/* IOV_MAX should normally be defined in limits.h. in case it's not, just
+ * take a standard value of 1024. It should not cause issue since we emulate
+ * writev/readv */
+#ifndef IOV_MAX
+#define IOV_MAX 1024
+#endif
 int ARSAL_Socket_Create(int domain, int type, int protocol)
 {
     return socket(domain, type, protocol);
@@ -83,12 +91,69 @@ ssize_t ARSAL_Socket_Recv(int sockfd, void *buf, size_t buflen, int flags)
 
 ssize_t ARSAL_Socket_Writev (int sockfd, const struct iovec *iov, int iovcnt)
 {
+    #ifdef WIN32
+    int i;
+    ssize_t wbytes = 0;
+    ssize_t ret = 0;
+    ssize_t sum = 0;
+
+    if (iovcnt <= 0 || iovcnt > IOV_MAX) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    /* check we don't overflow SSIZE_MAX */
+    for (i = 0; i < iovcnt; i++) {
+        if (SSIZE_MAX - sum < iov[i].iov_len) {
+            errno = EINVAL;
+            return -1;
+        }
+
+        sum += iov[i].iov_len;
+    }
+
+    for (i = 0; i < iovcnt; i++) {
+        ret = write(sockfd, iov[i].iov_base, iov[i].iov_len);
+        if (ret < 0)
+            return -1;
+
+        wbytes += ret;
+
+        /* short write means we can't proceed to the next area so break */
+        if (ret < iov[i].iov_len)
+            break;
+    }
+
+    return wbytes;
+#else
     return writev (sockfd, iov, iovcnt);
+#endif
 }
 
 ssize_t ARSAL_Socket_Readv (int sockfd, const struct iovec *iov, int iovcnt)
 {
+#ifdef WIN32
+    unsigned long numberOfBytesRecvd = 0;
+    int i;
+    WSABUF buffers[iovcnt];
+
+    for(i =0; i < iovcnt; i++)
+    {
+        buffers[i].buf = iov[i].iov_base;
+        buffers[i].len = iov[i].iov_len;
+    }
+
+    int ret = WSARecv(sockfd, buffers, iovcnt, &numberOfBytesRecvd, 0, NULL, NULL);
+
+    if(ret != 0)
+    {
+        return -1;
+    }
+
+    return numberOfBytesRecvd;
+#else
     return readv (sockfd, iov, iovcnt);
+#endif
 }
 
 int ARSAL_Socket_Bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)

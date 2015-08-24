@@ -122,7 +122,12 @@ int ARSAL_Time_GetLocalTime (struct timespec *res, struct tm *localTime)
         /* No else --> Do nothing if res is NULL */
         if (localTime != NULL)
         {
-            localtime_r (&(ts.tv_sec), localTime);
+            #ifdef WIN32
+                *localTime = *(localtime(&(ts.tv_sec)));
+            #else
+                localtime_r (&(ts.tv_sec), localTime);
+            #endif
+
         }
         /* No else --> Do nothing if localTime is NULL */
     }

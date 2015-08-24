@@ -37,10 +37,31 @@
 #ifndef _ARSAL_SOCKET_H_
 #define _ARSAL_SOCKET_H_
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/uio.h>
+
+#ifndef _WINSOCK2API_
+
+typedef unsigned int socklen_t;
+
+typedef unsigned short int sa_family_t;
+
+#define __SOCKADDR_COMMON(sa_prefix) \
+sa_family_t   sa_prefix
+
+struct sockaddr
+{
+    __SOCKADDR_COMMON (sa_);    /* Common data: address family and length.  */
+    char sa_data[14];           /* Address data.  */
+};
+
+#endif
+
+
+struct iovec
+{
+    void  *iov_base;   /* Adresse de début */
+    size_t iov_len;    /* Nombre d'octets à transférer */
+};
+
 
 /**
  * @brief Creates an endpoint for communication and returns a descriptor.

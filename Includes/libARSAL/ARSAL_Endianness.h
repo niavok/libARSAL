@@ -344,7 +344,217 @@ ARSAL_Endianness_SwapBigToHostDouble (double orig)
     return u.d;
 }
 
-#else // ! defined (__APPLE__)
+// ! defined (__APPLE__)
+#elif defined(WIN32)
+
+
+/**
+ * @brief Define little endian macro to the same values as linux <endian.h>
+ */
+#ifndef __LITTLE_ENDIAN
+# define __LITTLE_ENDIAN 1234
+#endif
+
+/**
+ * @brief Define big endian macro to the same values as linux <endian.h>
+ */
+#ifndef __BIG_ENDIAN
+# define __BIG_ENDIAN 4321
+#endif
+
+/**
+ * @brief Define pdp endian macro to the same values as linux <endian.h>
+ */
+#ifndef __PDP_ENDIAN
+# define __PDP_ENDIAN 3412
+#endif
+
+/**
+ * @brief Device endianness
+ */
+#ifndef __DEVICE_ENDIAN
+# define __DEVICE_ENDIAN __LITTLE_ENDIAN
+#endif
+
+/**
+ * @brief Opposite endiannes
+ */
+#ifndef __INVER_ENDIAN
+# define __INVER_ENDIAN __BIG_ENDIAN
+#endif
+
+#if __BYTE_ORDER__ == __DEVICE_ENDIAN
+
+/*
+ * HOST --> DEVICE Conversion macros
+ */
+
+/**
+ * @brief Convert a short int (2 bytes) to device endianness
+ */
+#define htods(v) (v)
+/**
+ * @brief Convert a long int (4 bytes) to device endianness
+ */
+#define htodl(v) (v)
+/**
+ * @brief Convert a long long int (8 bytes) to device endianness
+ */
+#define htodll(v) (v)
+/**
+ * @brief Convert a IEEE-754 float (4 bytes) to device endianness
+ */
+#define htodf(v) (v)
+/**
+ * @brief Convert a IEEE-754 double (8 bytes) to device endianness
+ */
+#define htodd(v) (v)
+
+/*
+ * DEVICE --> HOST Conversion macros
+ */
+
+/**
+ * @brief Convert a short int (2 bytes) from device endianness
+ */
+#define dtohs(v) (v)
+/**
+ * @brief Convert a long int (4 bytes) from device endianness
+ */
+#define dtohl(v) (v)
+/**
+ * @brief Convert a long long int (8 bytes) from device endianness
+ */
+#define dtohll(v) (v)
+/**
+ * @brief Convert a IEEE-754 float (4 bytes) from device endianness
+ */
+#define dtohf(v) (v)
+/**
+ * @brief Convert a IEEE-754 double (8 bytes) from device endianness
+ */
+#define dtohd(v) (v)
+
+#elif __BYTE_ORDER == __INVER_ENDIAN
+/*
+ * HOST --> DEVICE Conversion macros
+ */
+
+/**
+ * @brief Convert a short int (2 bytes) to device endianness
+ */
+#define htods(v) (__typeof__ (v))ARSAL_Endianness_bswaps((uint16_t)v)
+/**
+ * @brief Convert a long int (4 bytes) to device endianness
+ */
+#define htodl(v) (__typeof__ (v))ARSAL_Endianness_bswapl((uint32_t)v)
+/**
+ * @brief Convert a long long int (8 bytes) to device endianness
+ */
+#define htodll(v) (__typeof__ (v))ARSAL_Endianness_bswapll((uint64_t)v)
+/**
+ * @brief Convert a IEEE-754 float (4 bytes) to device endianness
+ */
+#define htodf(v) (__typeof__ (v))ARSAL_Endianness_bswapf((float)v)
+/**
+ * @brief Convert a IEEE-754 double (8 bytes) to device endianness
+ */
+#define htodd(v) (__typeof__ (v))ARSAL_Endianness_bswapd((double)v)
+
+/*
+ * DEVICE --> HOST Conversion macros
+ */
+
+/**
+ * @brief Convert a short int (2 bytes) from device endianness
+ */
+#define dtohs(v) (__typeof__ (v))ARSAL_Endianness_bswaps((uint16_t)v)
+/**
+ * @brief Convert a long int (4 bytes) from device endianness
+ */
+#define dtohl(v) (__typeof__ (v))ARSAL_Endianness_bswapl((uint32_t)v)
+/**
+ * @brief Convert a long long int (8 bytes) from device endianness
+ */
+#define dtohll(v) (__typeof__ (v))ARSAL_Endianness_bswapll((uint64_t)v)
+/**
+ * @brief Convert a IEEE-754 float (4 bytes) from device endianness
+ */
+#define dtohf(v) (__typeof__ (v))ARSAL_Endianness_bswapf((float)v)
+/**
+ * @brief Convert a IEEE-754 double (8 bytes) from device endianness
+ */
+#define dtohd(v) (__typeof__ (v))ARSAL_Endianness_bswapd((double)v)
+
+/*
+ * INTERNAL FUNCTIONS --- DO NOT USE THEM DIRECTLY
+ */
+
+/**
+ * @brief INTERNAL FUNCTION : Swap byte order of a short int
+ * @param orig Initial value
+ * @return Swapped value
+ */
+static inline uint16_t ARSAL_Endianness_bswaps (uint16_t orig)
+{
+    return ((orig & 0xFF00) >> 8) | ((orig & 0x00FF) << 8);
+}
+
+/**
+ * @brief INTERNAL FUNCTION : Swap byte order of a long int
+ * @param orig Initial value
+ * @return Swapped value
+ */
+static inline uint32_t ARSAL_Endianness_bswapl (uint32_t orig)
+{
+    return ((orig & 0xFF000000) >> 24) | ((orig & 0x00FF0000) >> 8) | ((orig & 0x0000FF00) << 8) | ((orig & 0x000000FF) << 24);
+}
+
+/**
+ * @brief INTERNAL FUNCTION : Swap byte order of a long long int
+ * @param orig Initial value
+ * @return Swapped value
+ */
+static inline uint64_t ARSAL_Endianness_bswapll (uint64_t orig)
+{
+    return ((orig << 56) |
+            ((orig << 40) & 0xff000000000000ULL) |
+            ((orig << 24) & 0xff0000000000ULL) |
+            ((orig << 8)  & 0xff00000000ULL) |
+            ((orig >> 8)  & 0xff000000ULL) |
+            ((orig >> 24) & 0xff0000ULL) |
+            ((orig >> 40) & 0xff00ULL) |
+            (orig >> 56));
+}
+
+/**
+ * @brief INTERNAL FUNCTION : Swap byte order of a IEEE-754 float
+ * @param orig Initial value
+ * @return Swapped value
+ */
+static inline float ARSAL_Endianness_bswapf (float orig)
+{
+    uint32_t res = ARSAL_Endianness_bswapl (*(uint32_t*)&orig);
+    return *(float *)&res;
+}
+
+/**
+ * @brief INTERNAL FUNCTION : Swap byte order of a IEEE-754 double
+ * @param orig Initial value
+ * @return Swapped value
+ */
+static inline double ARSAL_Endianness_bswapd (double orig)
+{
+    uint64_t res = ARSAL_Endianness_bswapll (*(uint64_t*)&orig);
+    return *(double *)&res;
+}
+
+#else // __BYTE_ORDER in neither LITTLE nor BIG endian
+#error PDP Byte endianness not supported
+#endif // __BYTE_ORDER
+
+
+#else
 
 #include <endian.h>
 
