@@ -50,7 +50,16 @@
 #endif
 int ARSAL_Socket_Create(int domain, int type, int protocol)
 {
+#if WIN32
+    int ret;
+    ret = socket(domain, type, protocol);
+    if(ret == INVALID_SOCKET)
+    {
+        return -1;
+    }
+#else
     return socket(domain, type, protocol);
+#endif
 }
 
 int ARSAL_Socket_Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
